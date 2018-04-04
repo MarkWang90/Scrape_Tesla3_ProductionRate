@@ -13,10 +13,11 @@ import sys
 
 
 os.chdir(r'C:\Users\markp\Desktop\DailyUpdate')
+source = f"https://www.bloomberg.com/graphics/2018-tesla-tracker/#"
 
 class bloombergTesla3Scraper(object):
     def __init__(self):
-        self.url = f"https://www.bloomberg.com/graphics/2018-tesla-tracker/#"
+        self.url = source
         self.driver = webdriver.Chrome()
         self.delay = 3 # of seconds to wait
 
@@ -81,12 +82,8 @@ def send_email(subject, msg):
         
         
 subject = "Tesla Daily Update"
-msg = 'Tesla 3 Weekly production at ' +str(x2[0]) + " and cumulative production at " + str(x1[0])+"!!"
+msg = f"Tesla 3 Weekly production at {x2[0]} and cumulative production at {x1[0]} ! See details at {source}"
 
 send_email(subject, msg)
 print('all jobs done')
-
-
-
-
 
