@@ -12,7 +12,7 @@ import datetime
 import sys
 
 
-os.chdir(r'C:\Users\markp\Desktop\DailyUpdate')
+os.chdir(r'C:\Users\markp\Desktop\DailyUpdate\Scrape_Tesla3_ProductionRate')
 source = f"https://www.bloomberg.com/graphics/2018-tesla-tracker/#"
 
 class bloombergTesla3Scraper(object):
@@ -63,27 +63,76 @@ with open('tesla3.csv','a') as csv:
     
     
 import smtplib
-
 import config
 
+from string import Template
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
-def send_email(subject, msg):
-    try:
-        server = smtplib.SMTP('smtp.gmail.com:587')
-        server.ehlo()
-        server.starttls()
-        server.login(config.EMAIL_ADDRESS, config.PASSWORD)
-        message = 'Subject: {}\n\n{}'.format(subject, msg)
-        server.sendmail(config.EMAIL_ADDRESS, config.EMAIL_ADDRESS, message)
-        server.quit()
-        print("Success: Email sent!")
-    except:
-        print("Email failed to send.")
-        
-        
-subject = "Tesla Daily Update"
-msg = f"Tesla 3 Weekly production at {x2[0]} and cumulative production at {x1[0]} ! See details at {source}"
+def get_contacts(filename):
+    """
+    Return two lists names, emails containing names and email addresses
+    read from a file specified by filename.
+    """
+    names = []
+    emails = []
+    with open(filename, mode='r', encoding='utf-8') as contacts_file:
+        for a_contact in contacts_file:
+            names.append(a_contact.split()[0])
+            emails.append(a_contact.split()[1])
+    return names, emails
 
-send_email(subject, msg)
+def read_template(filename):
+    """
+    Returns a Template object comprising the contents of the 
+    file specified by filename.
+    """
+    
+    with open(filename, 'r', encoding='utf-8') as template_file:
+        template_file_content = template_file.read()
+    return Template(template_file_content)
+
+
+def main():
+    names, emails = get_contacts('contacts.txt') # read contacts
+    message_template = read_template('message.txt')
+
+    # set up the SMTP server
+    s = smtplib.SMTP('smtp.gmail.com:587')
+    s.ehlo()
+    s.starttls()
+    s.login(config.EMAIL_ADDRESS, config.PASSWORD)
+
+    # For each contact, send the email:
+    for name, email in zip(names, emails):
+        msg = MIMEMultipart()       # create a message
+
+        # add in the actual person name to the message template
+        msg2 = f"Tesla 3 Weekly production at {x2[0]} and cumulative production at {x1[0]} ! See details at {source}"
+
+        message = message_template.substitute(PERSON_NAME=name.title(),Msg_context=msg2)
+        
+        # Prints out the message body for our sake
+#        print(message)
+
+        # setup the parameters of the message
+        msg['From']=config.EMAIL_ADDRESS
+        msg['To']=email
+        msg['Subject']="Tesla 3 Weekly Production"
+        
+        # add in the message body
+        msg.attach(MIMEText(message, 'plain'))
+        
+        # send the message via the server set up earlier.
+        s.send_message(msg)
+        del msg
+        
+    # Terminate the SMTP session and close the connection
+    s.quit()
+    
+if __name__ == '__main__':
+    print('sending messages')
+    main()
+    
 print('all jobs done')
 
